@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShortsAI Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A0A0F; --surface: #14141C; --surface2: #1C1C28; --surface3: #232334;
+      --violet: #7C3AED; --violet2: #9B5EFF; --pink: #FF2D55; --green: #22C55E;
+      --text: #F0F0F8; --muted: #8B8BA8; --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14); --radius: 12px;
+      --font: 'Space Grotesk', sans-serif; --font-body: 'Inter', sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+    .logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--violet), var(--pink));
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    /* TIKTOK CONNECT BUTTON */
+    .btn-connect {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2);
+      color: var(--text); font-family: var(--font); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.18s; text-decoration: none;
+    }
+    .btn-connect:hover { border-color: var(--violet); background: rgba(124,58,237,0.1); }
+    .btn-connect.connected { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.08); }
+    .btn-connect i { font-size: 16px; }
+    .connected-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* MAIN LAYOUT */
+    .main { display: grid; grid-template-columns: 1fr 300px; min-height: calc(100vh - 57px); }
+
+    /* EDITOR */
+    .editor { padding: 24px; display: flex; flex-direction: column; gap: 20px; max-width: 760px; }
+
+    .tabs { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 10px; }
+    .tab {
+      flex: 1; padding: 9px 12px; border-radius: 7px; border: none;
+      background: transparent; color: var(--muted); font-family: var(--font);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .tab.active { background: var(--surface3); color: var(--text); }
+    .tab i { font-size: 15px; }
+
+    .panel { display: none; flex-direction: column; gap: 16px; }
+    .panel.active { display: flex; }
+
+    .field-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+    .field-group { display: flex; flex-direction: column; }
+
+    textarea, input[type="text"], input[type="url"], input[type="datetime-local"], select {
+      background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px;
+      color: var(--text); font-family: var(--font-body); font-size: 14px;
+      padding: 11px 14px; outline: none; transition: border-color 0.18s; resize: none;
+      width: 100%;
+    }
+    textarea:focus, input:focus, select:focus { border-color: var(--violet); }
+    textarea { min-height: 100px; line-height: 1.6; }
+    select option { background: var(--surface2); }
+    input[type="datetime-local"] { color-scheme: dark; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .url-wrap { position: relative; display: flex; align-items: center; }
+    .url-wrap i { position: absolute; left: 12px; font-size: 17px; color: var(--muted); }
+    .url-wrap input { padding-left: 38px; }
+
+    .upload-zone {
+      border: 1.5px dashed var(--border2); border-radius: 10px; padding: 32px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      cursor: pointer; transition: all 0.18s; background: var(--surface2); text-align: center;
+    }
+    .upload-zone:hover { border-color: var(--violet); background: rgba(124,58,237,0.05); }
+    .upload-zone i { font-size: 32px; color: var(--muted); }
+    .upload-zone span { font-size: 13px; color: var(--muted); }
+    .upload-zone strong { font-size: 12px; color: var(--violet); }
+
+    .img-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .img-thumb { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 2px solid var(--border2); }
+
+    /* PLATFORM TOGGLES */
+    .platform-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 16px;
+    }
+    .platform-info { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; }
+    .plat-logo {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+    }
+    .logo-tk { background: #000; color: white; }
+    .logo-yt { background: #FF0000; color: white; }
+
+    .toggle {
+      width: 42px; height: 22px; background: var(--surface3); border-radius: 11px;
+      position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0;
+    }
+    .toggle.on { background: var(--violet); }
+    .toggle::after {
+      content: ''; position: absolute; width: 16px; height: 16px; background: white;
+      border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+
+    /* BUTTONS */
+    .btn-primary {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--violet), var(--violet2));
+      border: none; border-radius: 10px; color: white; font-family: var(--font);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.18s, transform 0.1s; letter-spacing: 0.2px;
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-primary i { font-size: 20px; }
+
+    .btn-publish {
+      background: linear-gradient(135deg, #FF2D55, #FF6B35);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      background: var(--surface); border-left: 1px solid var(--border);
+      padding: 20px; display: flex; flex-direction: column; gap: 20px;
+      position: sticky; top: 57px; height: calc(100vh - 57px); overflow-y: auto;
+    }
+    .sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; }
+
+    .phone-frame {
+      width: 100%; aspect-ratio: 9/16; background: #000; border-radius: 20px;
+      border: 2px solid var(--border2); position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .phone-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0; padding: 16px;
+      background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+      display: none; flex-direction: column; gap: 8px;
+    }
+    .phone-overlay.show { display: flex; }
+    .phone-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0.3; }
+    .phone-placeholder i { font-size: 40px; }
+    .phone-placeholder span { font-size: 12px; text-align: center; }
+
+    .prev-title-el { font-size: 14px; font-weight: 700; color: white; line-height: 1.4; }
+    .prev-hook-el { font-size: 11px; color: rgba(255,255,255,0.75); font-family: var(--font-body); line-height: 1.5; }
+    .prev-hashtags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .prev-hash { font-size: 11px; color: #9B5EFF; font-weight: 500; }
+
+    /* OUTPUT */
+    .output-box {
+      background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px;
+      padding: 14px; font-size: 13px; font-family: var(--font-body); color: var(--text);
+      line-height: 1.7; min-height: 90px; white-space: pre-wrap;
+    }
+    .output-box.empty { color: var(--muted); font-style: italic; display: flex; align-items: center; justify-content: center; }
+
+    .output-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .btn-sm {
+      background: var(--surface3); border: 1px solid var(--border2); border-radius: 8px;
+      color: var(--muted); font-family: var(--font); font-size: 11px; padding: 5px 10px;
+      cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color 0.15s;
+    }
+    .btn-sm:hover { color: var(--text); }
+    .btn-sm i { font-size: 13px; }
+
+    /* SCHEDULED POSTS */
+    .sched-list { display: flex; flex-direction: column; gap: 8px; }
+    .sched-item {
+      background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px;
+      padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+    }
+    .sched-plat {
+      width: 24px; height: 24px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .sched-info { flex: 1; }
+    .sched-name { font-size: 11px; font-weight: 600; }
+    .sched-time { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .sched-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+      background: rgba(124,58,237,0.2); color: var(--violet2);
+    }
+    .sched-badge.ok { background: rgba(34,197,94,0.15); color: #4ADE80; }
+
+    /* NOTIFICATION */
+    .notif {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: var(--surface3); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 14px 18px; font-size: 13px;
+      display: flex; align-items: center; gap: 10px; max-width: 320px;
+      transform: translateY(80px); opacity: 0; transition: all 0.3s;
+    }
+    .notif.show { transform: translateY(0); opacity: 1; }
+    .notif.success { border-color: rgba(34,197,94,0.4); }
+    .notif.error { border-color: rgba(255,45,85,0.4); }
+    .notif i { font-size: 18px; }
+    .notif.success i { color: var(--green); }
+    .notif.error i { color: var(--pink); }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .char-count { font-size: 10px; color: var(--muted); text-align: right; margin-top: 4px; }
+
+    .alert-box {
+      background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--violet2);
+      display: flex; align-items: flex-start; gap: 10px; line-height: 1.5;
+    }
+    .alert-box i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    @media (max-width: 768px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <i class="ti ti-check" id="notif-icon"></i>
+  <span id="notif-text"></span>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    ShortsAI Studio
+  </div>
+  <div class="topbar-right">
+    <button class="btn-connect" id="connect-btn" onclick="connectTikTok()">
+      <i class="ti ti-brand-tiktok"></i>
+      Conectar TikTok
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="editor">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('prompt')"><i class="ti ti-writing"></i> Prompt</button>
+      <button class="tab" onclick="switchTab('media')"><i class="ti ti-photo-video"></i> Medios</button>
+      <button class="tab" onclick="switchTab('schedule')"><i class="ti ti-calendar-event"></i> Publicar</button>
+    </div>
+
+    <!-- PANEL PROMPT -->
+    <div id="panel-prompt" class="panel active">
+      <div class="field-group">
+        <div class="field-label">Tema o idea principal</div>
+        <textarea id="main-prompt" placeholder="Ej: Los 3 secretos del Libro de Daniel que la ciencia confirma hoy..." oninput="charCount(this,'cc1',500)"></textarea>
+        <div class="char-count"><span id="cc1">0</span>/500</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Video viral de referencia (YouTube)</div>
+        <div class="url-wrap">
+          <i class="ti ti-brand-youtube"></i>
+          <input type="url" id="ref-url" placeholder="https://youtube.com/watch?v=...">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field-group">
+          <div class="field-label">Tono</div>
+          <select id="tone">
+            <option value="viral">Viral / Gancho</option>
+            <option value="engaging">Impactante</option>
+            <option value="educational">Educativo</option>
+            <option value="dramatic">Dramático</option>
+            <option value="calm">Reflexivo</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Duración</div>
+          <select id="duration">
+            <option value="30">~30 segundos</option>
+            <option value="45" selected>~45 segundos</option>
+            <option value="60">~60 segundos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Instrucciones adicionales</div>
+        <textarea id="extra" style="min-height:70px" placeholder="Ej: Incluye referencias bíblicas. Termina con pregunta al público..." oninput="charCount(this,'cc2',300)"></textarea>
+        <div class="char-count"><span id="cc2">0</span>/300</div>
+      </div>
+
+      <button class="btn-primary" id="gen-btn" onclick="generateScript()">
+        <i class="ti ti-sparkles"></i> Generar guión con IA
+      </button>
+    </div>
+
+    <!-- PANEL MEDIOS -->
+    <div id="panel-media" class="panel">
+      <div class="alert-box">
+        <i class="ti ti-info-circle"></i>
+        <div>Sube el video de tu Short ya editado. Si no tienes uno listo, usa el guión generado con herramientas como <strong>CapCut</strong> o <strong>Canva</strong> y luego vuelve aquí a subirlo.</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Video del Short (MP4, máx 500MB)</div>
+        <div class="upload-zone" onclick="document.getElementById('video-input').click()">
+          <i class="ti ti-video-plus"></i>
+          <span>Arrastra o haz clic para subir tu Short</span>
+          <strong>Formato vertical 9:16 recomendado</strong>
+        </div>
+        <input type="file" id="video-input" accept="video/mp4,video/quicktime" style="display:none" onchange="handleVideo(this)">
+        <div id="video-name" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Imágenes de referencia (opcional)</div>
+        <div class="upload-zone" onclick="document.getElementById('img-input').click()">
+          <i class="ti ti-photo-up"></i>
+          <span>Imágenes para el prompt visual</span>
+          <strong>PNG, JPG hasta 10MB</strong>
+        </div>
+        <input type="file" id="img-input" multiple accept="image/*" style="display:none" onchange="handleImgs(this)">
+        <div class="img-previews" id="img-previews"></div>
+      </div>
+    </div>
+
+    <!-- PANEL PUBLICAR -->
+    <div id="panel-schedule" class="panel">
+
+      <div class="field-group">
+        <div class="field-label">Título de publicación</div>
+        <input type="text" id="pub-title" placeholder="Se rellena automáticamente al generar...">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Publicar en TikTok</div>
+        <div class="platform-toggle">
+          <div class="platform-info">
+            <div class="plat-logo logo-tk">TT</div>
+            TikTok
+          </div>
+          <button class="toggle on" id="tog-tk" onclick="togglePlat('tk')"></button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fecha y hora — TikTok</div>
+        <input type="datetime-local" id="dt-tk">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Publicar en YouTube Shorts</div>
+        <div class="platform-toggle">
+          <div class="platform-info">
+            <div class="plat-logo logo-yt">YT</div>
+            YouTube Shorts
+          </div>
+          <button class="toggle on" id="tog-yt" onclick="togglePlat('yt')"></button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fecha y hora — YouTube</div>
+        <input type="datetime-local" id="dt-yt">
+      </div>
+
+      <button class="btn-primary btn-publish" id="publish-btn" onclick="publishVideo()">
+        <i class="ti ti-send"></i> Publicar / Programar
+      </button>
+
+      <div id="publish-status" style="display:none" class="alert-box">
+        <i class="ti ti-check"></i>
+        <div id="publish-msg"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-title">Vista previa del Short</div>
+
+    <div class="phone-frame">
+      <div class="phone-placeholder" id="ph-placeholder">
+        <i class="ti ti-device-mobile-vibration"></i>
+        <span>Tu Short aparecerá aquí</span>
+      </div>
+      <div class="phone-overlay" id="ph-overlay">
+        <div class="prev-title-el" id="ph-title"></div>
+        <div class="prev-hook-el" id="ph-hook"></div>
+        <div class="prev-hashtags" id="ph-tags"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-title" style="margin-bottom:8px">Guión generado</div>
+      <div class="output-box empty" id="output">El guión aparecerá aquí...</div>
+      <div class="output-actions" id="output-actions" style="display:none">
+        <button class="btn-sm" onclick="copyScript()"><i class="ti ti-copy"></i> Copiar</button>
+        <button class="btn-sm" onclick="clearAll()"><i class="ti ti-trash"></i> Limpiar</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-title" style="margin-bottom:8px">Publicaciones programadas</div>
+      <div class="sched-list" id="sched-list">
+        <div style="font-size:12px;color:var(--muted);">Ninguna aún</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────
+  // Vercel te dará una URL como: https://tu-proyecto.vercel.app
+  // Cámbiala aquí cuando lo despliegues:
+  const BACKEND_URL = window.location.origin;
+
+  // ─── ESTADO ───────────────────────────────────────────────
+  let state = {
+    accessToken: null,
+    openId: null,
+    connected: false,
+    lastScript: null,
+    lastData: null,
+    videoFile: null,
+    videoUrl: null,
+    platToggles: { tk: true, yt: true },
+    scheduled: []
+  };
+
+  // ─── INIT ─────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    setDefaultDates();
+    checkUrlParams();
+  });
+
+  function checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected') === 'true') {
+      state.accessToken = params.get('access_token');
+      state.openId = params.get('open_id');
+      state.connected = true;
+      setConnected();
+      window.history.replaceState({}, '', '/');
+      showNotif('success', 'TikTok conectado correctamente');
+    }
+    if (params.get('error')) {
+      showNotif('error', 'Error: ' + decodeURIComponent(params.get('error')));
+      window.history.replaceState({}, '', '/');
+    }
+  }
+
+  function setConnected() {
+    const btn = document.getElementById('connect-btn');
+    btn.className = 'btn-connect connected';
+    btn.innerHTML = '<span class="connected-dot"></span> TikTok conectado';
+    btn.onclick = null;
+  }
+
+  function connectTikTok() {
+    window.location.href = `${BACKEND_URL}/api/auth`;
+  }
+
+  // ─── TABS ─────────────────────────────────────────────────
+  function switchTab(name) {
+    ['prompt','media','schedule'].forEach(p => {
+      document.getElementById('panel-'+p).classList.remove('active');
+    });
+    document.getElementById('panel-'+name).classList.add('active');
+    document.querySelectorAll('.tab').forEach((b,i) => {
+      b.classList.toggle('active', ['prompt','media','schedule'][i] === name);
+    });
+  }
+
+  // ─── HELPERS ──────────────────────────────────────────────
+  function charCount(el, id, max) {
+    const n = el.value.length;
+    document.getElementById(id).textContent = n;
+    if (n > max) el.value = el.value.slice(0, max);
+  }
+
+  function setDefaultDates() {
+    const fmt = d => d.toISOString().slice(0,16);
+    const base = new Date(); base.setHours(base.getHours() + 2);
+    document.getElementById('dt-tk').value = fmt(base);
+    const yt = new Date(base); yt.setHours(yt.getHours() + 1);
+    document.getElementById('dt-yt').value = fmt(yt);
+  }
+
+  function togglePlat(p) {
+    state.platToggles[p] = !state.platToggles[p];
+    document.getElementById('tog-'+p).classList.toggle('on', state.platToggles[p]);
+  }
+
+  function handleImgs(input) {
+    const container = document.getElementById('img-previews');
+    Array.from(input.files).slice(0,6).forEach(f => {
+      const r = new FileReader();
+      r.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result; img.className = 'img-thumb';
+        container.appendChild(img);
+      };
+      r.readAsDataURL(f);
+    });
+  }
+
+  function handleVideo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    state.videoFile = file;
+    document.getElementById('video-name').textContent = `✓ ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)`;
+  }
+
+  function showNotif(type, msg) {
+    const el = document.getElementById('notif');
+    const icon = document.getElementById('notif-icon');
+    const text = document.getElementById('notif-text');
+    el.className = `notif show ${type}`;
+    icon.className = type === 'success' ? 'ti ti-check' : 'ti ti-alert-circle';
+    text.textContent = msg;
+    setTimeout(() => { el.className = 'notif'; }, 4000);
+  }
+
+  // ─── GENERAR GUIÓN ────────────────────────────────────────
+  async function generateScript() {
+    const prompt = document.getElementById('main-prompt').value.trim();
+    if (!prompt) { showNotif('error','Escribe un tema primero'); return; }
+
+    const tone = document.getElementById('tone').value;
+    const dur = document.getElementById('duration').value;
+    const extra = document.getElementById('extra').value.trim();
+    const refUrl = document.getElementById('ref-url').value.trim();
+    const btn = document.getElementById('gen-btn');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generando...';
+
+    const toneLabels = { viral:'viral con gancho poderoso', engaging:'impactante y directo', educational:'educativo y claro', dramatic:'dramático y emotivo', calm:'reflexivo y profundo' };
+
+    const systemPrompt = `Eres un experto creador de contenido viral en español para TikTok y YouTube Shorts.
+Creas guiones de exactamente ${dur} segundos (aprox ${Math.round(dur/60*150)} palabras).
+Responde ÚNICAMENTE en JSON válido con este formato exacto, sin texto extra:
+{"titulo":"Título impactante máx 60 chars","gancho":"Frase que engancha los primeros 3 segundos","guion":"Guión completo para narrar","hashtags":["#tag1","#tag2","#tag3","#tag4","#tag5"],"descripcion":"Descripción SEO de 100 chars"}`;
+
+    const userMsg = `Crea un Short sobre: "${prompt}"\nTono: ${toneLabels[tone]}\nDuración: ~${dur}s${extra?'\nExtra: '+extra:''}${refUrl?'\nReferencia: '+refUrl:''}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:userMsg}] })
+      });
+
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+      let parsed;
+      try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ parsed=null; }
+
+      if (parsed) {
+        renderOutput(parsed);
+        document.getElementById('pub-title').value = parsed.titulo || '';
+        showNotif('success','Guión generado correctamente');
+      } else {
+        document.getElementById('output').textContent = raw;
+        document.getElementById('output').className = 'output-box';
+      }
+    } catch(e) {
+      showNotif('error','Error al conectar con la IA');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-sparkles"></i> Generar guión con IA';
+  }
+
+  function renderOutput(d) {
+    state.lastData = d;
+    state.lastScript = `🎬 GANCHO:\n${d.gancho}\n\n📝 GUIÓN:\n${d.guion}\n\n#️⃣ HASHTAGS:\n${(d.hashtags||[]).join(' ')}\n\n📣 DESCRIPCIÓN:\n${d.descripcion}`;
+
+    const out = document.getElementById('output');
+    out.textContent = state.lastScript;
+    out.className = 'output-box';
+    document.getElementById('output-actions').style.display = 'flex';
+
+    // Preview en el móvil
+    document.getElementById('ph-placeholder').style.display = 'none';
+    const overlay = document.getElementById('ph-overlay');
+    overlay.classList.add('show');
+    document.getElementById('ph-title').textContent = d.titulo;
+    document.getElementById('ph-hook').textContent = d.gancho;
+    document.getElementById('ph-tags').innerHTML = (d.hashtags||[]).map(t=>`<span class="prev-hash">${t}</span>`).join('');
+  }
+
+  function copyScript() {
+    if (state.lastScript) navigator.clipboard.writeText(state.lastScript).then(() => showNotif('success','Guión copiado'));
+  }
+
+  function clearAll() {
+    state.lastScript = null; state.lastData = null;
+    document.getElementById('output').textContent = 'El guión aparecerá aquí...';
+    document.getElementById('output').className = 'output-box empty';
+    document.getElementById('output-actions').style.display = 'none';
+    document.getElementById('ph-placeholder').style.display = 'flex';
+    document.getElementById('ph-overlay').classList.remove('show');
+  }
+
+  // ─── PUBLICAR EN TIKTOK ───────────────────────────────────
+  async function publishVideo() {
+    if (!state.connected) {
+      showNotif('error','Primero conecta tu cuenta de TikTok');
+      return;
+    }
+
+    if (!state.platToggles.tk && !state.platToggles.yt) {
+      showNotif('error','Activa al menos una plataforma');
+      return;
+    }
+
+    const title = document.getElementById('pub-title').value.trim() || state.lastData?.titulo || 'Short publicado con ShortsAI';
+    const dtTk = document.getElementById('dt-tk').value;
+    const dtYt = document.getElementById('dt-yt').value;
+
+    const btn = document.getElementById('publish-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Publicando...';
+
+    let successCount = 0;
+    let errors = [];
+
+    // ── PUBLICAR EN TIKTOK ──
+    if (state.platToggles.tk) {
+      try {
+        // Si hay video subido, usamos su URL (en producción subirías a CDN primero)
+        // Aquí asumimos que el video ya tiene URL pública
+        const videoPublicUrl = state.videoUrl || prompt('Pega la URL pública de tu video MP4:');
+        if (videoPublicUrl) {
+          const body = {
+            videoUrl: videoPublicUrl,
+            title: title,
+            scheduleTime: dtTk || null,
+            privacyLevel: 'PUBLIC_TO_EVERYONE'
+          };
+
+          const res = await fetch(`${BACKEND_URL}/api/upload`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.accessToken}`
+            },
+            body: JSON.stringify(body)
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            successCount++;
+            addScheduledItem('TT', '#000', title, dtTk, data.publish_id);
+          } else {
+            errors.push('TikTok: ' + (data.error || 'Error desconocido'));
+          }
+        }
+      } catch(e) {
+        errors.push('TikTok: ' + e.message);
+      }
+    }
+
+    // ── RESULTADO ──
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Publicar / Programar';
+
+    if (successCount > 0) {
+      showNotif('success', `¡Publicado correctamente en ${successCount} plataforma(s)!`);
+      document.getElementById('publish-status').style.display = 'flex';
+      document.getElementById('publish-msg').textContent = `Video programado para el ${formatDate(dtTk)}`;
+    }
+    if (errors.length) {
+      showNotif('error', errors.join(' | '));
+    }
+  }
+
+  function addScheduledItem(label, color, title, datetime, publishId) {
+    const list = document.getElementById('sched-list');
+    if (list.querySelector('div[style]')) list.innerHTML = '';
+    const item = document.createElement('div');
+    item.className = 'sched-item';
+    item.innerHTML = `
+      <div class="sched-plat" style="background:${color}">${label}</div>
+      <div class="sched-info">
+        <div class="sched-name">${title.slice(0,28)}${title.length>28?'…':''}</div>
+        <div class="sched-time">${datetime ? formatDate(datetime) : 'Inmediato'}</div>
+      </div>
+      <span class="sched-badge">Programado</span>
+    `;
+    list.appendChild(item);
+    state.scheduled.push({ label, title, datetime, publishId });
+  }
+
+  function formatDate(s) {
+    if (!s) return 'Ahora';
+    const d = new Date(s);
+    return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}) + ' · ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  }
+</script>
+</body>
+</html>

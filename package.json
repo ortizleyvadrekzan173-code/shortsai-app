@@ -1,0 +1,9 @@
+{
+  "name": "shortsai-backend",
+  "version": "1.0.0",
+  "description": "Backend para ShortsAI Studio - Integración TikTok",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
